@@ -1,0 +1,42 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import scipy as sp
+
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import recall_score
+from sklearn.svm import SVC
+
+def classification_result(n0, n1, title=""):
+    rv1 = sp.stats.multivariate_normal([-1, 0], [[1, 0], [0, 1]])
+    rv2 = sp.stats.multivariate_normal([+1, 0], [[1, 0], [0, 1]])
+    X0 = rv1.rvs(n0, random_state=0)
+    X1 = rv2.rvs(n1, random_state=0)
+    X = np.vstack([X0, X1])
+    y = np.hstack([np.zeros(n0), np.ones(n1)])
+
+    x1min = -4; x1max = 4
+    x2min = -2; x2max = 2
+    xx1 = np.linspace(x1min, x1max, 1000)
+    xx2 = np.linspace(x2min, x2max, 1000)
+    X1, X2 = np.meshgrid(xx1, xx2)
+
+    plt.contour(X1, X2, rv1.pdf(np.dstack([X1, X2])), levels=[0.05], linestyles="dashed")
+    plt.contour(X1, X2, rv2.pdf(np.dstack([X1, X2])), levels=[0.05], linestyles="dashed")
+
+    model = SVC(kernel="linear", C=1e4, random_state=0).fit(X, y)
+    Y = np.reshape(model.predict(np.array([X1.ravel(), X2.ravel()]).T), X1.shape)
+    plt.scatter(X[y == 0, 0], X[y == 0, 1], marker='x', label="0 클래스")
+    plt.scatter(X[y == 1, 0], X[y == 1, 1], marker='o', label="1 클래스")
+    plt.contour(X1, X2, Y, colors='k', levels=[0.5])
+    y_pred = model.predict(X)
+    plt.xlim(-4, 4)
+    plt.ylim(-3, 3)
+    plt.xlabel("x1")
+    plt.ylabel("x2")
+    plt.title(title)
+    
+    return model, X, y, y_pred
+
+model, X, y, y_pred = classification_result(500, 50, "imbalanced (9:1)")
+
